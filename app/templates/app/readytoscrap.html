@@ -1,0 +1,18 @@
+{% extends 'app/base.html' %}
+{% load static %}
+{% block title %}Welcome To Scrapping{% endblock title %}
+{% block main-content %}
+
+<h2>Welcome <i class='welcome-msg'>{{request.user}}</i> to Swiggy Scrapping</h2>
+<br><br>
+<form action="{% url "scrapdata" %}" method="get">
+  <button type='submit' class="btn btn-info">Scrap Data</button>
+</form>
+
+<br><br><br>
+
+<a href="{% url "logout" %}"><button type='' class="mb-5 btn btn-danger">Logout</button></a>
+{% comment %} <a href="{% url "chart1" %}"><button type='' class="btn btn-danger">see charts</button></a> {% endcomment %}
+<br>
+
+{% endblock main-content %}

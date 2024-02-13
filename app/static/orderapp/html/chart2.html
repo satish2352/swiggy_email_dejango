@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Getting Started with Chart JS</title>
+    <style>
+      /* Your CSS styles here */
+    </style>
+  </head>
+  <body>
+    <div class="chartMenu">
+      <p>Chart JS <span id="chartVersion"></span></p>
+    </div>
+    <div class="chartCard">
+      <div class="chartBox">
+        <canvas id="myChart"></canvas>
+      </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <script>
+    const data = {
+      datasets: [{
+        label: 'Weekly Sales',
+        data: [
+          {x:'2021-11-01T00:00:00Z', y:18},
+          {x:'2021-11-02T00:00:00Z', y:12},
+          {x:'2021-11-03T00:00:00Z', y:6},
+          {x:'2021-11-04T00:00:00Z', y:9},
+          {x:'2021-11-05T00:00:00Z', y:3},
+          {x:'2021-11-06T00:00:00Z', y:12},
+          {x:'2021-11-07T00:00:00Z', y:3},
+        ],
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2
+      }]
+    };
+
+    const config = {
+      type: 'bar',
+      data: data,
+      options: {
+        scales: {
+          x: {
+            type: 'time',
+            time: {
+              unit: 'day',
+              displayFormats: {
+                day: 'MMM D'
+              },
+              parser: 'YYYY-MM-DDTHH:mm:ssZ',
+            },
+            ticks: {
+              source: 'data',
+              autoSkip: true
+            }
+          },
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    };
+
+    const myChart = new Chart(
+      document.getElementById('myChart'),
+      config
+    );
+
+    const chartVersion = document.getElementById('chartVersion');
+    chartVersion.innerText = Chart.version;
+    </script>
+  </body>
+</html>

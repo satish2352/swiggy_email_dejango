@@ -1,0 +1,196 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>char</title>
+    {% comment %} <link rel="stylesheet" href="{% static "app/css/style.css" %}"> {% endcomment %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+    }
+    
+    .container {
+        max-width: 960px;
+        margin: 0 auto;
+    }
+    
+    
+    .chartBox {
+        padding: 20px;
+    }
+    
+    canvas {
+      margin: 20px;
+        width: 400px !important;
+        height: 400px !important;
+    }
+
+    .week-month-btn{
+      margin-right: 27vh;      
+    }
+    
+    </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row text-center">
+      <div class="col-sm-4  border-1">
+        <h3>Total Orders</h3>
+      </div>
+      <div class=" col-sm-4 border border-1">
+       <h3>Total Amount Spent</h3>     
+      </div>
+      <div class=" col-sm-4 border border-1">
+       <h3>Average Amount Spent</h3>
+      </div>
+      {% comment %} <div class="row text-center"> {% endcomment %}
+        <div class="col-sm-4  border  border-1">
+         <h3> {{chart_data.ordersummary.total_orders}}</h3>
+        </div>
+        <div class=" col-sm-4 border  border-1">
+         <h3> {{chart_data.ordersummary.total_amount}}</h3>  
+        </div>
+        <div class=" col-sm-4 border  border-1">
+          <h3>{{chart_data.ordersummary.average_amount |floatformat:2}}</h3>
+        </div>
+      {% comment %} </div> {% endcomment %}
+    </div>
+  </div>
+
+  <h1>{{request.user}}</h1>
+   
+    <div class="container-fluid">
+      <div class="row">
+        <form action="">
+          <div class='col-sm-12 mt-2 text-center'>
+            <a href="{% url 'chart1' %}?lastweek=true"><input type="button" name='filterByWeek' value="Last 7 Days Data"></a>
+            <input type="date" name="startdate" id="startdate" value='{{startdate}}'>
+            <input type="date" name="enddate" id="enddate" value='{{enddate}}'>
+            <input type="submit" value="Search">
+            {% comment %} <a  href="{% url 'chart1' %}?last30days=true"><input type="button" name='filterByWeek' value="Last 30 Days Data"></a> {% endcomment %}
+          </div>
+        </form>
+        <div class="row container text-center">
+         
+        </div>
+
+      </div>
+      <div class="row">
+          <div class="col-md-4 text-center">
+            <h1>Order By Status</h1>
+            <canvas id="myChart1"  width="400" height="400" aria-label="chart" role="img"></canvas>
+          </div>
+          <div class="col-md-4">
+            <h1>Item quantity</h1>
+            <canvas id="myChart2" width="400" height="400" aria-label="chart" role="img"></canvas>
+          </div>
+          
+          <div class="col-md-4 ">
+            {% comment %} <div class="chartBox"> {% endcomment %}
+              <h1>Date wise orders</h1>
+              <canvas id="myChart3" width="600" height="400" aria-label="chart" role="img"></canvas>
+              {% comment %} <input onchange="filterData()" type="date" name="" id="startdate" value="">
+              <input onchange='filterData()' type="date" name="" id="enddate"  value=""> {% endcomment %}
+            {% comment %} </div> {% endcomment %}
+          </div>
+
+          <div class="chartCard col-md-4">
+            <div class="chartBox text-center">
+              <h1>WEEK |  MONTH</h1>
+              <canvas id="myChart4" width="400" height="400" aria-label="chart" role="img"></canvas>
+             {% comment %}  <button onclick='timeFrame(this)' value="day">Day</button>{% endcomment %}
+              {% comment %} <button onclick="timeFrame(this)" value="week">week</button>
+              <button onclick="timeFrame(this)" value="month">Month</button>  {% endcomment %}
+
+               <div class="week-month-btn"> <button type="button" class="btn btn-primary" onclick="timeFrame(this)" value="week">Week</button>
+                <button type="button" class="btn btn-info" onclick="timeFrame(this)" value="month">Month</button></div>
+        
+            
+            </div>
+          </div>
+          
+       <div class="col-md-4">
+        <table class="table table-sm">
+          <thead>
+              <tr class='table-secondary'>
+                  <th scope="col">#</th>
+                  <th scope="col">Restaurant</th>
+                  <th scope="col">Orders</th>
+                  <th scope="col">Total Amount Spent</th>
+                  <th scope="col">Average Order Amount</th>
+              </tr>
+          </thead>
+          <tbody>
+              {% for restaurant in chart_data.top_res%}
+              <tr class='table-info'>
+                  <th scope="row">{{ forloop.counter }}</th>
+                  <td>{{ restaurant.restaurant__rname }}</td>
+                  <td>{{ restaurant.total_orders }}</td>
+                  <td>{{ restaurant.total_amount |floatformat:2 }}</td>
+                  <td>{{ restaurant.avg_amount |floatformat:2 }}</td>
+              </tr>
+              {% endfor %}
+          </tbody>
+      </table>
+            </div> 
+
+
+            <div class="col-md-4">
+              <table class="table table-sm">
+                <thead>
+                    <tr class='table-dark'>
+                        <th scope="col">#</th>
+                        <th scope="col">Food Item Name</th>
+                        <th scope="col">Orders</th>
+                        <th scope="col">Total Amount Spent</th>
+                        <th scope="col">Average Order Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in chart_data.top_item %}
+                    <tr class='table-primary'>
+                        <th scope="row">{{ forloop.counter }}</th>
+                        <td>{{ item.iname }}</td>
+                        <td>{{ item.total_orders  }}</td>
+                        <td>{{ item.total_amount |floatformat:2}}</td>
+                        <td>{{ item.avg_order_amount |floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            
+
+
+        </div>
+      </div>
+
+      
+      
+                
+
+{{ chart_data|json_script:"chart_data" }}
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.3.2/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/chart.js/dist/chart.umd.min.js"></script>
+
+
+<script src="{% static "orderapp/js/script.js" %}"></script>
+<script src="{% static "orderapp/js/datewise_order_chart.js" %}"></script>
+<script src="{% static "orderapp/js/daywise_chart.js" %}"></script>
+</html>
