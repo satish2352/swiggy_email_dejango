@@ -104,7 +104,10 @@ def extract_order_summary(soup):
                 summary_details['Item Total'] = float(value) if value else 0.0
             elif 'Order Packing Charges' in row.text:
                 value = row.find_all('td')[-1].text.strip().replace('₹', '').replace(',', '').replace('-', '').replace('₹\xa0', '').strip()
+                # print("before summary_details['order packing charges']")
                 summary_details['Order Packing Charges'] = float(value) if value else 0.0
+                
+                # print( 'order packing charges:------------> ',summary_details['Order Packing Charges'])
             elif 'Delivery partner fee' in row.text:
                 value = row.find_all('td')[-1].text.strip().replace('₹', '').replace(',', '').replace('-', '').replace('₹\xa0', '').strip()
                 summary_details['Delivery partner fee'] = float(value) if value else 0.0
@@ -121,7 +124,7 @@ def extract_order_summary(soup):
                 value = row.find_all('td')[-1].text.strip().replace('₹', '').replace(',', '').replace('-', '').replace('₹\xa0', '').strip()
                 summary_details['Order Total'] = float(value) if value else 0.0
         except:
-            pass
+            continue
 
     return summary_details
 

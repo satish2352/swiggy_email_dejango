@@ -105,6 +105,8 @@ def successfully_scrap(request):
         order_placed_at = datetime.strptime(data['order_data']['Order placed at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order placed at:'].lower() else None
         order_delivered_at = datetime.strptime(data['order_data']['Order delivered at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order delivered at:'].lower() else None
 
+
+        
         try: 
             order , order_created = Order.objects.get_or_create(
             restaurant = restaurant,
@@ -115,26 +117,29 @@ def successfully_scrap(request):
             customer=customer,
             order_total=data['order_summary']['Order Total']
         )
-        
+            if not order_created:
+               continue
+            
             for item in data['item_details']:
                 if 'not found' in item[0].lower() or 'not found' in str(item[1]).lower() or 'not found' in str(item[2]).lower():
                     continue
-                Item.objects.create(
+                items_added ,item_created= Item.objects.get_or_create(
                     order=order,
                     iname=item[0],
                     quantity=item[1],
                     price=item[2]
                 )
-            Payment.objects.create(
+            order_summary = data.get('order_summary', {})  # Get order_summary if exists, otherwise empty dictionary
+            payment_data, payment_created = Payment.objects.get_or_create(
                 order=order,
                 payment_method='Unknown',  # Update this as per your data
-                items_total=data['order_summary']['Item Total'],
-                packing_charges=data['order_summary']['Order Packing Charges'],
-                platform_fee=data['order_summary']['Platform fee'],
-                delivery_partner_fee=data['order_summary']['Delivery partner fee'],
-                discount_applied=data['order_summary']['Discount Applied'],
-                taxes=data['order_summary']['Taxes'],
-                order_total=data['order_summary']['Order Total']
+                items_total=order_summary.get('Item Total', 0.0),
+                packing_charges=order_summary.get('Order Packing Charges', 0.0),
+                platform_fee=order_summary.get('Platform fee', 0.0),
+                delivery_partner_fee=order_summary.get('Delivery partner fee', 0.0),
+                discount_applied=order_summary.get('Discount Applied', 0.0),
+                taxes=order_summary.get('Taxes', 0.0),
+                order_total=order_summary.get('Order Total', 0.0)
             )
         except IntegrityError as e:
             print("errorr as ",e)
