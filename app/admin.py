@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Customer, Restaurant, Order, Item, Payment
+from .models import Customer, Restaurant, Order, Item, Payment, SearchedDate
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
@@ -20,3 +20,7 @@ class ItemAdmin(admin.ModelAdmin):
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
     list_display = ['order', 'payment_method', 'items_total', 'packing_charges', 'platform_fee', 'delivery_partner_fee', 'discount_applied', 'taxes', 'order_total']
+
+@admin.register(SearchedDate)
+class SearchedDateAdmin(admin.ModelAdmin):
+    list_display = ('user', 'from_date', 'till_date')

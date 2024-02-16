@@ -217,18 +217,3 @@ def charts(request):
         # Handle exceptions gracefully
         error_message = f"An error occurred: {str(e)}"
         return HttpResponse(error_message)
-
-   
-
-
-
-
-
-
-
-
-
-
-
-
-   

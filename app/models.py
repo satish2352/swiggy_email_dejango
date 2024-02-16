@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import datetime
 
 class Customer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -8,7 +9,14 @@ class Customer(models.Model):
 
     def __str__(self):
         return f"{self.cname}-{self.user}" 
-    
+
+class SearchedDate(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    from_date = models.DateField(null=True,blank=True)
+    till_date = models.DateField(default=datetime.date(2014, 1, 1), null=True)
+
+    def __str__(self):
+        return f'{self.user.username} - {self.from_date} to {self.till_date}'
 class Restaurant(models.Model):
     rname = models.CharField(max_length=255,blank=True,null=True,default='not Found')
     raddress = models.TextField()
