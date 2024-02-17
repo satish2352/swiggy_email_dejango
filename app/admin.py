@@ -23,4 +23,4 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(SearchedDate)
 class SearchedDateAdmin(admin.ModelAdmin):
-    list_display = ('user', 'from_date', 'till_date')
+    list_display = ('user', 'from_date', 'till_date','check_updated')

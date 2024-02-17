@@ -1,4 +1,5 @@
 import sys
+from .models import SearchedDate
 # sys.path.append(r'C:\Users\vijay.c\Desktop\sumago\day 1\New folder')
 from django.shortcuts import render,redirect
 from googleapiclient.discovery import build
@@ -13,12 +14,16 @@ import re
 from .models import SearchedDate
 from datetime import datetime,date
 from django.utils import timezone
+import pytz
 # import google_auth_oauthlib.flow
 from google_auth_oauthlib.flow import InstalledAppFlow
 # from google_auth_oauthlib.flow import Flow
+from dateutil import parser
+# import google.oauth2.credentials
+# import google_auth_oauthlib.flow
+from django.db import IntegrityError
+from .models import Restaurant, Customer, Order, Item, Payment
 
-import google.oauth2.credentials
-import google_auth_oauthlib.flow
 
 from .info_functions import  (
     get_order_info,
@@ -26,6 +31,79 @@ from .info_functions import  (
     get_customer_info,
     extract_item_details,
     extract_order_summary)
+
+
+
+def Scrap_data_add(request,data):
+        # Check if any field contains 'not found'
+    if 'not found' in data['restaurant']['restaurant_name'].lower() or \
+        'not found' in data['restaurant']['restaurant_address'].lower() or \
+        'not found' in data['customer_info']['customer_name'].lower() or \
+        'not found' in data['customer_info']['customer_address'].lower() or \
+        'not found' in data['order_data']['Order No:'].lower() or \
+        'not found' in data['order_data']['Order placed at:'].lower() or \
+        'not found' in data['order_data']['Order delivered at:'].lower() or \
+        'not found' in data['order_data']['Order Status'].lower() or \
+        'not found' in str(data['order_summary']['Order Total']).lower():
+        return None
+        
+    # Check if the Customer object exists, if not create a new one
+    customer, created = Customer.objects.get_or_create(
+        user = request.user,
+        cname=data['customer_info']['customer_name'],
+        caddress=data['customer_info']['customer_address']
+    )
+    print('customer created', created)
+    
+    # Create and save the Restaurant object
+    restaurant, created = Restaurant.objects.get_or_create(
+        rname=data['restaurant']['restaurant_name'],
+        raddress=data['restaurant']['restaurant_address']
+    )
+    print('restaurant created',created)
+    # Create and save the Order object
+    order_placed_at = datetime.strptime(data['order_data']['Order placed at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order placed at:'].lower() else None
+    order_delivered_at = datetime.strptime(data['order_data']['Order delivered at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order delivered at:'].lower() else None
+
+
+    
+    try: 
+        order , order_created = Order.objects.get_or_create(
+        restaurant = restaurant,
+        order_number=data['order_data']['Order No:'],
+        order_placed_at=order_placed_at,
+        order_delivered_at=order_delivered_at,
+        order_status=data['order_data']['Order Status'],
+        customer=customer,
+        order_total=data['order_summary']['Order Total']
+    )
+        if not order_created:
+            return None
+        
+        for item in data['item_details']:
+            if 'not found' in item[0].lower() or 'not found' in str(item[1]).lower() or 'not found' in str(item[2]).lower():
+                continue
+            items_added ,item_created= Item.objects.get_or_create(
+                order=order,
+                iname=item[0],
+                quantity=item[1],
+                price=item[2]
+            )
+        order_summary = data.get('order_summary', {})  # Get order_summary if exists, otherwise empty dictionary
+        payment_data, payment_created = Payment.objects.get_or_create(
+            order=order,
+            payment_method='Unknown',  # Update this as per your data
+            items_total=order_summary.get('Item Total', 0.0),
+            packing_charges=order_summary.get('Order Packing Charges', 0.0),
+            platform_fee=order_summary.get('Platform fee', 0.0),
+            delivery_partner_fee=order_summary.get('Delivery partner fee', 0.0),
+            discount_applied=order_summary.get('Discount Applied', 0.0),
+            taxes=order_summary.get('Taxes', 0.0),
+            order_total=order_summary.get('Order Total', 0.0)
+        )
+    except IntegrityError as e:
+        print("errorr as ",e)
+        return None
 
 # Define the SCOPES. If modifying it, delete the token.pickle file.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -51,7 +129,6 @@ def extract_message_body(parts):
 
 def getEmails(request):
     count=0
-    data_obj = []
     creds = None
     # token_file_path = os.path.join(os.getcwd(), 'tokens', 'token.pickle')
     # if os.path.exists(r'tokens\token.pickle'):
@@ -84,83 +161,60 @@ def getEmails(request):
     profile = service.users().getProfile(userId='me').execute()
     total_emails = profile['messagesTotal']
     print(f'Total emails: {total_emails}')
-    
-    # messages = []
 
-# Request a list of all the messages
+    date_model_instance = SearchedDate.objects.get(user=request.user) # SEARCHEDDATE MODEL INSTANCE
+
     result = service.users().messages().list(userId='me').execute()
-    # result = service.users().messages().list(userId='me', q='in:inbox after:2024/02/13 before:2024/02/14').execute()
-    # print("REquered messages betweeen dates :",result)
-    # messages = result.get('messages')
-
-    # GEt all messages obj 
-    # messages = []
-    # while 'messages' in result:
-    #     # messages.extend(result['messages'])
-    #     if 'nextPageToken' in result:
-    #         page_token = result['nextPageToken']
-    #         result = service.users().messages().list(userId='me', pageToken=page_token).execute()
-    #     else:
-    #         last_message = result.get('messages').pop() 
-    #         txt = service.users().messages().get(userId='me', id=last_message['id']).execute()  # Get the full data of the last message
-    #         payload = txt['payload']
-    #         headers = payload.get('headers')
-    #         for d in headers:
-    #             if d['name'] == 'Date':
-    #                 print(f"Date of the last email: {d['value']}")
-    #         break    messages = []
     tokencount= 0
-    while 'messages' in result:
-        # messages.extend(result['messages'])
-        if 'nextPageToken' in result:
-            print("Has next token",tokencount)
-            tokencount += 1
-            page_token = result['nextPageToken']
-            result = service.users().messages().list(userId='me', pageToken=page_token).execute()
-        else:
-            # print('reslult of last token', result)
-            list_messages = result.get('messages')
-            # print(list_messages)
-            while list_messages :
-                last_message = list_messages.pop()  # Get the last message
-                # last_message2 = list_messages.pop(0)  # Get the last message
-                # print("this is laast_message1",last_message)
-                # print("this is laast_message2",last_message2)
-                txt = service.users().messages().get(userId='me', id=last_message['id']).execute()
-                payload = txt.get('payload',None)
-                if payload:
-                    headers = payload.get('headers',None)
-                    if headers:
-                        for d in headers:
-                            if d['name'] == 'Date':
-                                first_mail_date = d['value']
-                                # print(last_msg_date)
-                                break
+    if not date_model_instance.check_updated:
+        while 'messages' in result:
+            # messages.extend(result['messages'])
+            if 'nextPageToken' in result:
+                print("Has next token",tokencount)
+                tokencount += 1
+                page_token = result['nextPageToken']
+                result = service.users().messages().list(userId='me', pageToken=page_token).execute()
+            else:
+                # print('reslult of last token', result)
+                list_messages = result.get('messages')
+                # print(list_messages)
+                while list_messages :
+                    last_message = list_messages.pop()  # Get the last message
+                    # last_message2 = list_messages.pop(0)  # Get the last message
+                    # print("this is laast_message1",last_message)
+                    # print("this is laast_message2",last_message2)
+                    txt = service.users().messages().get(userId='me', id=last_message['id']).execute()
+                    payload = txt.get('payload',None)
+                    if payload:
+                        headers = payload.get('headers',None)
+                        if headers:
+                            for d in headers:
+                                if d['name'] == 'Date':
+                                    first_mail_date = d['value']
+                                    # print(last_msg_date)
+                                    break
+                        else:
+                            continue
+                        break
                     else:
                         continue
-                    break
-                else:
-                    continue
-            break
-
-                
-        # print("____________last_message of messages +++++++++++++> ", last_message)
-
-    print("lenght of all mail++++++++++++++++++++++++++++>>>>>>>> ", len(list_messages))
-    # print(messages)
-    # '155729a36263a3c4'}, {'id': '1557292d6144a9e5', 'threadId': '1557292d6144a9e5'}, {'id': '155582c72f1164f7', 'threadId': '155582c72f1164f7'}, {'id': '15554c8850a36a85', 'threadId': '15554c8850a36a85'}, {'id': '15554c884030fb47', 'threadId': '15554c8850a36a85'}, {'id': '155196fef74b6050', 'threadId': '155196fef74b6050'}, {'id': '155196fee96098c7', 'threadId': '155196fee96098c7'}, {'id': '155196fed473b6e7', 'threadId': '155196fed473b6e7'}]
-    print((f"Date of the last email: {first_mail_date}------> for {last_message}"))
-
-
+                break
+        # date_model_instance = SearchedDate.objects.get(user=request.user) # SEARCHEDDATE MODEL INSTANCE
+        last_mail_date_obj = parser.parse(str(first_mail_date)).date()
+        date_model_instance.till_date = last_mail_date_obj
+        date_model_instance.check_updated = True
+        date_model_instance.save()
 
 # start_date = datetime.strptime('2024/02/13', '%Y/%m/%d').date()
 # end_date = date.today()
     
 
     delta = dt.timedelta(days=1)
-    start_date = datetime.strptime('2024/02/10', '%Y/%m/%d').date()
-    # model_dates = SearchedDate.objects.filter(user=request.user).first().till_date
-    # print(model_dates)
+    if date_model_instance.from_date:
+        start_date = date_model_instance.from_date
+    else:
+        start_date = date_model_instance.till_date
+    
   
     end_date = date.today()
     while start_date <= end_date:
@@ -203,7 +257,7 @@ def getEmails(request):
                 if parts:
                     body_text, body_html = extract_message_body(parts)
 
-                    # can change the condition here
+                    # can swiggy email subject here.
                     if 'swiggy' in subject.lower():
                         print("Subject: ", subject)
                         print("From: ", sender)
@@ -219,7 +273,9 @@ def getEmails(request):
                         order_info_dict['item_details'] = extract_item_details(soup)
                         order_info_dict['order_summary'] = extract_order_summary(soup)
 
-                        data_obj.append(order_info_dict)
+                        # data_obj.append(order_info_dict)
+                        Scrap_data_add(request,order_info_dict)
+                        order_info_dict={}
 
                         # print(data_obj)
 
@@ -227,7 +283,12 @@ def getEmails(request):
                 # Handle the exception and print the details
                 print(f"An exception occurred: {str(e)}") 
         start_date += delta
-    return data_obj
+
+        # date_model_instance = SearchedDate.objects.get(user=request.user) # SEARCHEDDATE MODEL INSTANCE
+        # UPDATE FROM_DATE WITH START_DATE
+        date_model_instance.from_date = (start_date-delta)
+        date_model_instance.save()
+    return True
 
 
 

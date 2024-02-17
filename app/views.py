@@ -5,7 +5,6 @@ from .scrap import getEmails
 from django.http import HttpResponse
 from .models import Restaurant, Customer, Order, Item, Payment
 from datetime import datetime
-import pytz
 from django.db.models import Count, Sum, Avg
 from django.contrib import messages
 from .charts_functions import orders_by_status,quantity_by_item, orders_over_time,get_past_7_days_data,order_summary,get_past_30_days_data,top_5_restaurant_data,top_5_Items
@@ -74,76 +73,76 @@ def successfully_scrap(request):
     received_data = getEmails(request)  # received_data contains the list with data
     # print(received_data)
 
-    for data in received_data:
-        # Check if any field contains 'not found'
-        if 'not found' in data['restaurant']['restaurant_name'].lower() or \
-           'not found' in data['restaurant']['restaurant_address'].lower() or \
-           'not found' in data['customer_info']['customer_name'].lower() or \
-           'not found' in data['customer_info']['customer_address'].lower() or \
-           'not found' in data['order_data']['Order No:'].lower() or \
-           'not found' in data['order_data']['Order placed at:'].lower() or \
-           'not found' in data['order_data']['Order delivered at:'].lower() or \
-           'not found' in data['order_data']['Order Status'].lower() or \
-           'not found' in str(data['order_summary']['Order Total']).lower():
-            continue
+    # for data in received_data:
+    #     # Check if any field contains 'not found'
+    #     if 'not found' in data['restaurant']['restaurant_name'].lower() or \
+    #        'not found' in data['restaurant']['restaurant_address'].lower() or \
+    #        'not found' in data['customer_info']['customer_name'].lower() or \
+    #        'not found' in data['customer_info']['customer_address'].lower() or \
+    #        'not found' in data['order_data']['Order No:'].lower() or \
+    #        'not found' in data['order_data']['Order placed at:'].lower() or \
+    #        'not found' in data['order_data']['Order delivered at:'].lower() or \
+    #        'not found' in data['order_data']['Order Status'].lower() or \
+    #        'not found' in str(data['order_summary']['Order Total']).lower():
+    #         continue
 
-        # Check if the Customer object exists, if not create a new one
-        customer, created = Customer.objects.get_or_create(
-            user = request.user,
-            cname=data['customer_info']['customer_name'],
-            caddress=data['customer_info']['customer_address']
-        )
-        print('customer created', created)
+    #     # Check if the Customer object exists, if not create a new one
+    #     customer, created = Customer.objects.get_or_create(
+    #         user = request.user,
+    #         cname=data['customer_info']['customer_name'],
+    #         caddress=data['customer_info']['customer_address']
+    #     )
+    #     print('customer created', created)
         
-        # Create and save the Restaurant object
-        restaurant, created = Restaurant.objects.get_or_create(
-            rname=data['restaurant']['restaurant_name'],
-            raddress=data['restaurant']['restaurant_address']
-        )
-        print('restaurant created',created)
-        # Create and save the Order object
-        order_placed_at = datetime.strptime(data['order_data']['Order placed at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order placed at:'].lower() else None
-        order_delivered_at = datetime.strptime(data['order_data']['Order delivered at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order delivered at:'].lower() else None
+    #     # Create and save the Restaurant object
+    #     restaurant, created = Restaurant.objects.get_or_create(
+    #         rname=data['restaurant']['restaurant_name'],
+    #         raddress=data['restaurant']['restaurant_address']
+    #     )
+    #     print('restaurant created',created)
+    #     # Create and save the Order object
+    #     order_placed_at = datetime.strptime(data['order_data']['Order placed at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order placed at:'].lower() else None
+    #     order_delivered_at = datetime.strptime(data['order_data']['Order delivered at:'], '%A, %B %d, %Y %I:%M %p').replace(tzinfo=pytz.UTC) if 'not found' not in data['order_data']['Order delivered at:'].lower() else None
 
 
         
-        try: 
-            order , order_created = Order.objects.get_or_create(
-            restaurant = restaurant,
-            order_number=data['order_data']['Order No:'],
-            order_placed_at=order_placed_at,
-            order_delivered_at=order_delivered_at,
-            order_status=data['order_data']['Order Status'],
-            customer=customer,
-            order_total=data['order_summary']['Order Total']
-        )
-            if not order_created:
-               continue
+    #     try: 
+    #         order , order_created = Order.objects.get_or_create(
+    #         restaurant = restaurant,
+    #         order_number=data['order_data']['Order No:'],
+    #         order_placed_at=order_placed_at,
+    #         order_delivered_at=order_delivered_at,
+    #         order_status=data['order_data']['Order Status'],
+    #         customer=customer,
+    #         order_total=data['order_summary']['Order Total']
+    #     )
+    #         if not order_created:
+    #            continue
             
-            for item in data['item_details']:
-                if 'not found' in item[0].lower() or 'not found' in str(item[1]).lower() or 'not found' in str(item[2]).lower():
-                    continue
-                items_added ,item_created= Item.objects.get_or_create(
-                    order=order,
-                    iname=item[0],
-                    quantity=item[1],
-                    price=item[2]
-                )
-            order_summary = data.get('order_summary', {})  # Get order_summary if exists, otherwise empty dictionary
-            payment_data, payment_created = Payment.objects.get_or_create(
-                order=order,
-                payment_method='Unknown',  # Update this as per your data
-                items_total=order_summary.get('Item Total', 0.0),
-                packing_charges=order_summary.get('Order Packing Charges', 0.0),
-                platform_fee=order_summary.get('Platform fee', 0.0),
-                delivery_partner_fee=order_summary.get('Delivery partner fee', 0.0),
-                discount_applied=order_summary.get('Discount Applied', 0.0),
-                taxes=order_summary.get('Taxes', 0.0),
-                order_total=order_summary.get('Order Total', 0.0)
-            )
-        except IntegrityError as e:
-            print("errorr as ",e)
-            continue
+    #         for item in data['item_details']:
+    #             if 'not found' in item[0].lower() or 'not found' in str(item[1]).lower() or 'not found' in str(item[2]).lower():
+    #                 continue
+    #             items_added ,item_created= Item.objects.get_or_create(
+    #                 order=order,
+    #                 iname=item[0],
+    #                 quantity=item[1],
+    #                 price=item[2]
+    #             )
+    #         order_summary = data.get('order_summary', {})  # Get order_summary if exists, otherwise empty dictionary
+    #         payment_data, payment_created = Payment.objects.get_or_create(
+    #             order=order,
+    #             payment_method='Unknown',  # Update this as per your data
+    #             items_total=order_summary.get('Item Total', 0.0),
+    #             packing_charges=order_summary.get('Order Packing Charges', 0.0),
+    #             platform_fee=order_summary.get('Platform fee', 0.0),
+    #             delivery_partner_fee=order_summary.get('Delivery partner fee', 0.0),
+    #             discount_applied=order_summary.get('Discount Applied', 0.0),
+    #             taxes=order_summary.get('Taxes', 0.0),
+    #             order_total=order_summary.get('Order Total', 0.0)
+    #         )
+    #     except IntegrityError as e:
+    #         print("errorr as ",e)
+    #         continue
 
     return redirect(reverse('dashboard'))
 

@@ -104,6 +104,9 @@
                                 <input class='btn btn-dark' type="date" name="enddate" id="enddate" value='{{enddate}}'>
                                 <input type="submit" class="btn btn-outline-secondary" value="Search">
                                 <a  href="{% url 'dashboard' %}?last30days=true"><input type="button"  class="btn btn-info" name='filterByWeek' value="Last 30 Days Data"></a>
+                                <a href="{% url 'dashboard' %}">
+                                    <input type="button" class="btn btn-warning border border-light border-2" name='reset' value="Reset" style="border-radius: 50%;">
+                                  </a>
                               </div>
                             </form>
                         </div>

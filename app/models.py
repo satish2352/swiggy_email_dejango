@@ -11,9 +11,11 @@ class Customer(models.Model):
         return f"{self.cname}-{self.user}" 
 
 class SearchedDate(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE) 
     from_date = models.DateField(null=True,blank=True)
     till_date = models.DateField(default=datetime.date(2014, 1, 1), null=True)
+    check_updated = models.BooleanField(default=False,blank=True)
+  
 
     def __str__(self):
         return f'{self.user.username} - {self.from_date} to {self.till_date}'
