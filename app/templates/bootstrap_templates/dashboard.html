@@ -69,12 +69,12 @@
                                 Forgot Password
                             </a>
 
-                
-                            <!-- <div class="sb-sidenav-menu-heading">Addons</div>
                             <a class="nav-link" href="{% url 'charts' %}">
                                 <div class="sb-nav-link-icon"><i class="fas fa-chart-area"></i></div>
                                 Charts
                             </a>
+                            <!-- <div class="sb-sidenav-menu-heading">Addons</div>
+                            
                             <a class="nav-link" href="tables.html">
                                 <div class="sb-nav-link-icon"><i class="fas fa-table"></i></div>
                                 Tables
@@ -194,6 +194,16 @@
                             </div>
                         </div>
 
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <i class="fas fa-chart-area me-1"></i>
+                                Time in range - orders
+                            </div>
+                            <div class="card-body"><canvas id="order-per-hr" width="100%" height="30"></canvas></div>
+                            {% comment %} <div class="card-footer small text-muted">Updated yesterday at 11:59 PM</div> {% endcomment %}
+                        </div>
+
+
                         <div class="row">
                             <div class="col-xl-6">
                                 <div class=" card mb-6">
@@ -225,10 +235,7 @@
                                         </table>
                                 </div>
                             </div>
-                        
-
-
-
+                    
                             <div class="col-xl-6">
                                 <div class=" card mb-6">
                                     <div class="card-header">
@@ -299,25 +306,12 @@
 <script src="{% static "orderapp/js/script.js" %}"></script>
 <script src="{% static "orderapp/js/datewise_order_chart.js" %}"></script>
 <script src="{% static "orderapp/js/daywise_chart.js" %}"></script>  
+<script src="{% static "orderapp/js/order_hourly_count.js" %}"></script>  
    <script src="{% static 'bootstrap_static/js/datatables-simple-demo.js'  %}"></script> 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
 
     </body>
 </html>

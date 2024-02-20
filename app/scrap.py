@@ -163,6 +163,7 @@ def getEmails(request):
     print(f'Total emails: {total_emails}')
 
     date_model_instance = SearchedDate.objects.get(user=request.user) # SEARCHEDDATE MODEL INSTANCE
+    # print(date_model_instance)
 
     result = service.users().messages().list(userId='me').execute()
     tokencount= 0
@@ -217,7 +218,7 @@ def getEmails(request):
     
   
     end_date = date.today()
-    while start_date <= end_date:
+    while start_date <= end_date + delta:
         query = f'after:{(start_date - delta).strftime("%Y/%m/%d")} before:{start_date.strftime("%Y/%m/%d")}'
         result = service.users().messages().list(userId='me', q=query).execute()
         
@@ -249,39 +250,71 @@ def getEmails(request):
                 # Look for Subject and Sender Email in the headers
                 subject = next((d['value'] for d in headers if d['name'] == 'Subject'), None)
                 sender = next((d['value'] for d in headers if d['name'] == 'From'), None)
-                print(subject)
-                print(sender)
+                print("subject of mail :: ", subject)
+                print('sender of mail ::',sender)
 
                 # The Body of the message is in Encrypted format. So, we have to decode it.
-                parts = payload.get('parts')
-                if parts:
-                    body_text, body_html = extract_message_body(parts)
+                # if payload.get('mimeType') == 'text/plain':
+                #     body = payload.get('body')
+                #     data = body.get('data')
+                #     print()
+                #     if data:
+                #         text = base64.urlsafe_b64decode(data).decode()
+                #         print('text','--------------------->',text)
 
-                    # can swiggy email subject here.
+                # parts = payload.get('parts')
+                if 'swiggy' in subject.lower():
+                    print("subject of mail inif: ", subject)
+                    print("sender of mail inif: ", sender)
+
                     if 'swiggy' in subject.lower():
-                        print("Subject: ", subject)
-                        print("From: ", sender)
-                        
+                        parts = payload.get('parts')
+                        if parts:
+                            body_text, body_html = extract_message_body(parts)
+                            
 
-                        order_info_dict ={}
-                        soup = BeautifulSoup(body_html, 'html.parser')
+                    # if payload.get('mimeType') == 'text/html':
+                    #     body = payload.get('body')
+                    #     data = body.get('data')
+                    #     if data:
+                    #         body_html = base64.urlsafe_b64decode(data).decode()
 
-                        # print(extract_order_summary(soup))
-                        order_info_dict['order_data'] = get_order_info(soup)
-                        order_info_dict['restaurant'] = get_restaurant_info(soup)
-                        order_info_dict['customer_info']= get_customer_info(soup)
-                        order_info_dict['item_details'] = extract_item_details(soup)
-                        order_info_dict['order_summary'] = extract_order_summary(soup)
+                    #         if body_html:
+                    #             print("BODY_HTML  READING",)
 
-                        # data_obj.append(order_info_dict)
-                        Scrap_data_add(request,order_info_dict)
-                        order_info_dict={}
+
+                    # body_text, body_html = extract_message_body(parts)
+                            # body_html = html
+                            # print("subject of mail inif: ", subject)
+                            # print("sender of mail inif: ", sender)
+
+                
+                            # can swiggy email subject here.
+                            # print("Subject.lower() -->",subject.lower())
+                            # if 'swiggy' in subject.lower():
+                                # print("Subject: ", subject)
+                                # print("From: ", sender)
+                                
+
+                            order_info_dict ={}
+                            soup = BeautifulSoup(body_html, 'html.parser')
+
+                            # print(extract_order_summary(soup))
+                            order_info_dict['order_data'] = get_order_info(soup)
+                            order_info_dict['restaurant'] = get_restaurant_info(soup)
+                            order_info_dict['customer_info']= get_customer_info(soup)
+                            order_info_dict['item_details'] = extract_item_details(soup)
+                            order_info_dict['order_summary'] = extract_order_summary(soup)
+
+                            # data_obj.append(order_info_dict)
+                            Scrap_data_add(request,order_info_dict)
+                            order_info_dict={}
 
                         # print(data_obj)
 
-            except Exception as e:
+            except Exception :
                 # Handle the exception and print the details
-                print(f"An exception occurred: {str(e)}") 
+                print(f"An exception occurred: {str(Exception)}") 
         start_date += delta
 
         # date_model_instance = SearchedDate.objects.get(user=request.user) # SEARCHEDDATE MODEL INSTANCE

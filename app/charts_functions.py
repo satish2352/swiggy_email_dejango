@@ -5,6 +5,10 @@ from .models import Restaurant, Customer, Order, Item, Payment
 from django.utils import timezone
 from django.db.models import Sum, Avg
 from datetime import datetime, timedelta
+from django.db.models import Count
+from django.db.models.functions import TruncHour
+from django.http import JsonResponse
+from django.db.models import Q
 def date_time_chart_data(request):
     day_data = Order.objects.annotate(date=TruncDate('order_placed_at')).values('date').annotate(count=Count('id')).order_by('date')
 
@@ -95,6 +99,7 @@ def top_5_restaurant_data(request,startdate,enddate):
     return list(res_data)
 
 def top_5_Items(request,startdate,enddate):
+
     print("Top 5 enddate ===>",enddate)
     current_user = request.user
     if startdate and enddate:
@@ -109,6 +114,66 @@ def top_5_Items(request,startdate,enddate):
         .order_by('-total_orders')[:5])
     return list(top_items)
     
+
+# def order_hourly_count(request,):
+#     user = request.user
+
+# # Initialize an empty list to store the results for each time interval
+#     hour_interval = []
+#     order_count = []
+#     # Assuming the user is authenticated, you can get the user from the request
+#     for hour in range(24):
+#     # Calculate the end hour for the current time interval
+#         end_hour = (hour + 1) % 24  # Wraps around to 0 for the last interval (23-0)
+
+#         # Create a filter for the current time interval
+#         filter_condition = Q(
+#             customer__user=user,
+#             order_placed_at__hour__gte=hour,
+#             order_placed_at__hour__lt=end_hour
+#         )
+
+#         # Get the count of orders for the current time interval
+#         order_count.append(Order.objects.filter(filter_condition).count())
+#         hour_interval.append(f'{hour:02d}-{end_hour:02d}')
+
+#     # Print or use the results as needed
+#     return {'hour_interval':hour_interval,'order_count':order_count}
+
+
+
+def order_hourly_count(request,startdate,enddate):
+    current_user = request.user
+    
+    
+    # Initialize an empty list to store the results for each time interval
+    hour_interval = []
+    order_count = []
+
+    for hour in range(24):
+    # Calculate the end hour for the current time interval
+        end_hour = (hour + 1) % 24  # Wraps around to 0 for the last interval (23-0)
+
+        if startdate and enddate:
+            order_count.append(Order.objects.filter(Q(
+                order_placed_at__range=(startdate, enddate),customer__user=current_user,
+                order_placed_at__hour__gte=hour,
+                order_placed_at__hour__lt=end_hour
+            )).count())
+        else:
+            order_count.append(Order.objects.filter(Q(
+                customer__user=current_user,
+                order_placed_at__hour__gte=hour,
+                order_placed_at__hour__lt=end_hour
+            )).count())
+
+        hour_interval.append(f'{hour:02d}-{end_hour:02d}')
+        
+    print(hour_interval,order_count)
+    # Print or use the results as needed
+    return {'hour_interval':hour_interval,'order_count':order_count}
+
+
 
 
     
